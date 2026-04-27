@@ -3,12 +3,31 @@ import {
   useEditorPanelConfig,
   useElementData,
 } from "@sigmacomputing/plugin";
-import { useMemo, useState } from "react";
+import { Component, useMemo, useState } from "react";
 
 interface Node_t {
   value: string;
   label: string;
   children?: Node_t[];
+}
+
+class ErrorBoundary extends Component<
+  { children: React.ReactNode },
+  { error: string | null }
+> {
+  constructor(props: { children: React.ReactNode }) {
+    super(props);
+    this.state = { error: null };
+  }
+  static getDerivedStateFromError(e: Error) {
+    return { error: e.message };
+  }
+  render() {
+    if (this.state.error) {
+      return <p style={{ padding: 8, color: "red", fontSize: 12 }}>Error: {this.state.error}</p>;
+    }
+    return this.props.children;
+  }
 }
 
 function TreeNode({
@@ -23,25 +42,22 @@ function TreeNode({
   const [expanded, setExpanded] = useState(true);
   const hasChildren = !!node.children?.length;
 
-  const allChildValues = (n: Node_t): string[] => [
+  const allValues = (n: Node_t): string[] => [
     n.value,
-    ...(n.children?.flatMap(allChildValues) ?? []),
+    ...(n.children?.flatMap(allValues) ?? []),
   ];
 
   const isChecked = checked.has(node.value);
-  const childValues = node.children?.flatMap(allChildValues) ?? [];
-  const isIndeterminate =
-    !isChecked && childValues.some((v) => checked.has(v));
+  const childVals = node.children?.flatMap(allValues) ?? [];
+  const isIndeterminate = !isChecked && childVals.some((v) => checked.has(v));
 
   const handleCheck = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const newChecked = e.target.checked;
-    onCheck(node.value, newChecked);
-    allChildValues(node).forEach((v) => onCheck(v, newChecked));
+    allValues(node).forEach((v) => onCheck(v, e.target.checked));
   };
 
   return (
     <div style={{ paddingLeft: 16 }}>
-      <div style={{ display: "flex", alignItems: "center", gap: 4, padding: "2px 0", cursor: "default" }}>
+      <div style={{ display: "flex", alignItems: "center", gap: 4, padding: "2px 0" }}>
         <span
           style={{ width: 14, display: "inline-block", cursor: hasChildren ? "pointer" : "default", userSelect: "none" }}
           onClick={() => hasChildren && setExpanded((v) => !v)}
@@ -56,7 +72,7 @@ function TreeNode({
           style={{ cursor: "pointer" }}
         />
         <span
-          style={{ fontSize: 13 }}
+          style={{ fontSize: 13, cursor: hasChildren ? "pointer" : "default" }}
           onClick={() => hasChildren && setExpanded((v) => !v)}
         >
           {node.label}
@@ -70,7 +86,7 @@ function TreeNode({
   );
 }
 
-function App() {
+function Tree() {
   useEditorPanelConfig([
     { type: "element", name: "source" },
     { type: "column", name: "label", source: "source", allowMultiple: false },
@@ -89,16 +105,19 @@ function App() {
 
     if (!xCol?.length || !labelCol?.length || !depthCol?.length) return [];
 
-    const rootNode: Node_t = { value: String(xCol[0]), label: String(labelCol[0]) };
-    const data = [rootNode];
-    const stack: Node_t[] = [rootNode];
+    const data: Node_t[] = [];
+    const stack: Node_t[] = [];
 
-    for (let i = 1; i < labelCol.length; i++) {
+    for (let i = 0; i < labelCol.length; i++) {
       const node: Node_t = { value: String(xCol[i]), label: String(labelCol[i]) };
       const depth = Number(depthCol[i]);
       stack[depth] = node;
-      if (!stack[depth - 1].children) stack[depth - 1].children = [];
-      stack[depth - 1].children!.push(node);
+      if (depth === 0) {
+        data.push(node);
+      } else {
+        if (!stack[depth - 1].children) stack[depth - 1].children = [];
+        stack[depth - 1].children!.push(node);
+      }
     }
     return data;
   }, [config.depth, config.label, config.x, sigmaData]);
@@ -127,4 +146,10 @@ function App() {
   );
 }
 
-export default App;
+export default function App() {
+  return (
+    <ErrorBoundary>
+      <Tree />
+    </ErrorBoundary>
+  );
+}
