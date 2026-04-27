@@ -2,16 +2,7 @@ import {
   useConfig,
   useEditorPanelConfig,
   useElementData,
-  useVariable,
 } from "@sigmacomputing/plugin";
-import { useMemo, useState } from "react";
-import CheckboxTree from "react-checkbox-tree";
-
-interface Node_t {
-  value: string;
-  label: string;
-  children?: Node_t[];
-}
 
 function App() {
   useEditorPanelConfig([
@@ -24,68 +15,17 @@ function App() {
 
   const config = useConfig();
   const sigmaData = useElementData(config.source);
-  const [filterValue, setFilter] = useVariable(config.filterControl);
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const rawValue = (filterValue?.defaultValue as any)?.value;
-  const checkedValues: string[] = rawValue ? String(rawValue).split(",") : [];
-  const [expanded, setExpanded] = useState<string[]>([]);
 
-  const treeData = useMemo(() => {
-    const labelCol = sigmaData[config.label];
-    const depthCol = sigmaData[config.depth];
-    const xCol = sigmaData[config.x];
-
-    if (!xCol?.length || !labelCol?.length || !depthCol?.length) {
-      return [];
-    }
-
-    const rootNode: Node_t = {
-      value: String(labelCol[0]),
-      label: String(labelCol[0]),
-    };
-    const data = [rootNode];
-    const stack: Node_t[] = [rootNode];
-
-    for (let i = 1; i < labelCol.length; i++) {
-      const node: Node_t = {
-        value: String(labelCol[i]),
-        label: String(labelCol[i]),
-      };
-      const currentDepth = Number(depthCol[i]);
-      stack[currentDepth] = node;
-      if (!stack[currentDepth - 1].children) {
-        stack[currentDepth - 1].children = [];
-      }
-      stack[currentDepth - 1].children!.push(node);
-    }
-    return data;
-  }, [config.depth, config.label, config.x, sigmaData]);
-
-  if (!config.source || !config.label || !config.depth || !config.x) {
-    return <p style={{ padding: 8, color: "#888" }}>Configure source and columns in the panel.</p>;
-  }
-
-  if (treeData.length === 0) {
-    return <p style={{ padding: 8, color: "#888" }}>No data — check that X, Label, and Depth columns are mapped and the source has rows.</p>;
-  }
+  const labelCol = sigmaData[config.label] ?? [];
+  const depthCol = sigmaData[config.depth] ?? [];
 
   return (
-    <CheckboxTree
-      nodes={treeData}
-      checked={checkedValues}
-      expanded={expanded}
-      checkModel="all"
-      expandOnClick
-      onExpand={nodes => setExpanded(nodes)}
-      onCheck={(selectedNodes) => {
-        if (selectedNodes.length) {
-          setFilter(selectedNodes.join(","));
-        } else {
-          setFilter(null);
-        }
-      }}
-      iconsClass="fa4"
-    />
+    <div style={{ padding: 12, fontFamily: "sans-serif", fontSize: 13 }}>
+      <p><strong>rows:</strong> {labelCol.length}</p>
+      {labelCol.slice(0, 5).map((label, i) => (
+        <p key={i}>{String(label)} (depth {String(depthCol[i])})</p>
+      ))}
+    </div>
   );
 }
 
