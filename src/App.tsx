@@ -25,8 +25,10 @@ function App() {
   const config = useConfig();
   const sigmaData = useElementData(config.source);
   const [filterValue, setFilter] = useVariable(config.filterControl);
-  // @ts-expect-error lib definitions need updates
-  const [expanded, setExpanded] = useState(filterValue?.defaultValue.value);
+  const checkedValues: string[] = filterValue?.defaultValue.value
+    ? String(filterValue.defaultValue.value).split(",")
+    : [];
+  const [expanded, setExpanded] = useState<string[]>([]);
 
   const treeData = useMemo(() => {
     if (
@@ -62,8 +64,7 @@ function App() {
   return (
     <CheckboxTree
       nodes={treeData}
-      // @ts-expect-error lib definitions need updates
-      checked={filterValue?.defaultValue.value}
+      checked={checkedValues}
       expanded={expanded}
       checkModel="all"
       expandOnClick
