@@ -2,7 +2,6 @@ import {
   useConfig,
   useEditorPanelConfig,
   useElementData,
-  useVariable,
 } from "@sigmacomputing/plugin";
 import { useMemo, useState } from "react";
 import CheckboxTree from "react-checkbox-tree";
@@ -19,12 +18,10 @@ function App() {
     { type: "column", name: "label", source: "source", allowMultiple: false },
     { type: "column", name: "depth", source: "source", allowMultiple: false },
     { type: "column", name: "x", source: "source", allowMultiple: false },
-    { type: "variable", name: "filterControl" },
   ]);
 
   const config = useConfig();
   const sigmaData = useElementData(config.source);
-  const [filterValue, setFilter] = useVariable(config.filterControl);
   const [expanded, setExpanded] = useState<string[]>([]);
   const [checked, setChecked] = useState<string[]>([]);
 
@@ -67,9 +64,6 @@ function App() {
     return <p style={{ padding: 8, color: "#888" }}>No data — check that X, Label, and Depth columns are mapped.</p>;
   }
 
-  // suppress unused-var warning — filterValue read is intentionally omitted
-  void filterValue;
-
   return (
     <CheckboxTree
       nodes={treeData}
@@ -78,12 +72,7 @@ function App() {
       checkModel="all"
       expandOnClick
       onExpand={nodes => setExpanded(nodes)}
-      onCheck={selectedNodes => {
-        setChecked(selectedNodes);
-        try {
-          setFilter(selectedNodes.length ? selectedNodes.join(",") : null);
-        } catch (_) { /* variable not connected */ }
-      }}
+      onCheck={selectedNodes => setChecked(selectedNodes)}
       iconsClass="fa4"
     />
   );
