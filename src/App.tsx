@@ -35,7 +35,7 @@ function App() {
     }
 
     const rootNode: Node_t = {
-      value: String(labelCol[0]),
+      value: String(xCol[0]),
       label: String(labelCol[0]),
     };
     const data = [rootNode];
@@ -43,7 +43,7 @@ function App() {
 
     for (let i = 1; i < labelCol.length; i++) {
       const node: Node_t = {
-        value: String(labelCol[i]),
+        value: String(xCol[i]),
         label: String(labelCol[i]),
       };
       const currentDepth = Number(depthCol[i]);
