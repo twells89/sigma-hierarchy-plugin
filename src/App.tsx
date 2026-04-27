@@ -25,9 +25,9 @@ function App() {
   const config = useConfig();
   const sigmaData = useElementData(config.source);
   const [filterValue, setFilter] = useVariable(config.filterControl);
-  const checkedValues: string[] = filterValue?.defaultValue.value
-    ? String(filterValue.defaultValue.value).split(",")
-    : [];
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const rawValue = (filterValue?.defaultValue as any)?.value;
+  const checkedValues: string[] = rawValue ? String(rawValue).split(",") : [];
   const [expanded, setExpanded] = useState<string[]>([]);
 
   const treeData = useMemo(() => {
