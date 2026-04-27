@@ -31,35 +31,43 @@ function App() {
   const [expanded, setExpanded] = useState<string[]>([]);
 
   const treeData = useMemo(() => {
-    if (
-      !sigmaData[config.x]?.length ||
-      !sigmaData[config.label]?.length ||
-      !sigmaData[config.depth]?.length
-    ) {
+    const labelCol = sigmaData[config.label];
+    const depthCol = sigmaData[config.depth];
+    const xCol = sigmaData[config.x];
+
+    if (!xCol?.length || !labelCol?.length || !depthCol?.length) {
       return [];
     }
+
     const rootNode: Node_t = {
-      value: sigmaData[config.label][0],
-      label: sigmaData[config.label][0],
+      value: String(labelCol[0]),
+      label: String(labelCol[0]),
     };
     const data = [rootNode];
-    const stack = [rootNode];
+    const stack: Node_t[] = [rootNode];
 
-    // assuming that x is always sorted by ascending order
-    for (let i = 1; i < sigmaData[config.label].length; i++) {
-      const node = {
-        value: sigmaData[config.label][i],
-        label: sigmaData[config.label][i],
+    for (let i = 1; i < labelCol.length; i++) {
+      const node: Node_t = {
+        value: String(labelCol[i]),
+        label: String(labelCol[i]),
       };
-      const currentDepth = sigmaData[config.depth][i];
+      const currentDepth = Number(depthCol[i]);
       stack[currentDepth] = node;
       if (!stack[currentDepth - 1].children) {
         stack[currentDepth - 1].children = [];
       }
-      stack[currentDepth - 1].children?.push(node);
+      stack[currentDepth - 1].children!.push(node);
     }
     return data;
   }, [config.depth, config.label, config.x, sigmaData]);
+
+  if (!config.source || !config.label || !config.depth || !config.x) {
+    return <p style={{ padding: 8, color: "#888" }}>Configure source and columns in the panel.</p>;
+  }
+
+  if (treeData.length === 0) {
+    return <p style={{ padding: 8, color: "#888" }}>No data — check that X, Label, and Depth columns are mapped and the source has rows.</p>;
+  }
 
   return (
     <CheckboxTree
@@ -70,9 +78,8 @@ function App() {
       expandOnClick
       onExpand={nodes => setExpanded(nodes)}
       onCheck={(selectedNodes) => {
-        console.log(selectedNodes);
         if (selectedNodes.length) {
-          setFilter(selectedNodes.join(","))
+          setFilter(selectedNodes.join(","));
         } else {
           setFilter(null);
         }
